@@ -2,6 +2,17 @@
 library(tidyverse)
 library(ggplot2)
 library(scales)
+hayvansal <- read.csv2("hayvansal_atiklar.csv",
+                       fileEncoding = "Windows-1254",
+                       stringsAsFactors = FALSE)
+
+ormansal <- read.csv2("ormansal_atiklar.csv",
+                      fileEncoding = "Windows-1254",
+                      stringsAsFactors = FALSE)
+
+belediye <- read.csv2("belediye_atiklari.csv",
+                      fileEncoding = "Windows-1254",
+                      stringsAsFactors = FALSE)
 
 # ------------------------------------------------------------
 # 1. VERİ OKUMA
