@@ -14,18 +14,9 @@ belediye <- read.csv2("belediye_atiklari.csv",
                       fileEncoding = "Windows-1254",
                       stringsAsFactors = FALSE)
 
-# ------------------------------------------------------------
-# 1. VERİ OKUMA
-# encoding = "latin1" Türkçe CSV için gerekli
-# ------------------------------------------------------------
 belediye <- read.csv("belediye_atiklari.csv", sep = ";", encoding = "latin1")
 ormansal <- read.csv("ormansal_atiklar.csv",  sep = ";", encoding = "latin1")
 
-# ------------------------------------------------------------
-# 2. VERİ TEMİZLEME VE TOPLAM HESAPLAMA
-# ------------------------------------------------------------
-
-# -- BELEDİYE --
 belediye <- belediye %>%
   mutate(
     biyometan_ton = as.numeric(gsub(",", ".", biyometanizasyona_uygun_belediye_atiklarim_miktari_ton_yil)),
@@ -35,9 +26,6 @@ belediye <- belediye %>%
 bel_bio <- sum(belediye$biyometan_ton, na.rm = TRUE)
 bel_yak <- sum(belediye$yakma_ton,     na.rm = TRUE)
 
-# -- ORMANSAL --
-# Endüstriyel olarak değerlendirilmeyenler → yakmaya uygun
-# Suçeyrat (ince dal, yaprak vb.)           → biyometanizasyona uygun
 # 1 ster ≈ 0.7 ton
 
 STER_TON <- 0.7
@@ -52,9 +40,6 @@ ormansal <- ormansal %>%
 orm_bio <- sum(ormansal$suceyrattan_ton,  na.rm = TRUE)
 orm_yak <- sum(ormansal$endustriyel_ton,  na.rm = TRUE)
 
-# ------------------------------------------------------------
-# 3. YÜZDE HESAPLA VE VERİ ÇERÇEVESİ OLUŞTUR
-# ------------------------------------------------------------
 ozet <- tibble(
   Kaynak           = c("Belediye Atıkları", "Ormansal Atıklar"),
   Biyometanizasyon = c(bel_bio, orm_bio),
@@ -66,7 +51,6 @@ ozet <- tibble(
     Pct_Yak = round(Yakma            / Toplam * 100)
   )
 
-# Uzun formata çevir
 ozet_long <- ozet %>%
   select(Kaynak, `Biyometanizasyona Uygun` = Pct_Bio, `Yakmaya Uygun` = Pct_Yak) %>%
   pivot_longer(
@@ -78,11 +62,6 @@ ozet_long <- ozet %>%
     Islem_Turu = factor(Islem_Turu, levels = c("Yakmaya Uygun", "Biyometanizasyona Uygun"))
   )
 
-# ------------------------------------------------------------
-# 4. EKSENLERDEKİ ETİKETLER - Parantez İçinde Alt Kategoriler
-# ------------------------------------------------------------
-# X ekseninde her kaynağın ne tür atıkları kapsadığını belirt
-# \n ile alt satıra geçiyoruz, parantez içinde alt kategoriler
 
 eksen_etiketleri <- c(
   "Belediye Atıkları" =
@@ -101,9 +80,6 @@ ozet_long <- ozet_long %>%
     )
   )
 
-# ------------------------------------------------------------
-# 5. YÜZDELİ YIĞILMIş SÜTUN GRAFİK - MAVİ TONLARI
-# ------------------------------------------------------------
 renk_paleti <- c(
   "Yakmaya Uygun"           = "#B5D4F4",  # açık mavi
   "Biyometanizasyona Uygun" = "#378ADD"   # koyu mavi
@@ -163,16 +139,15 @@ p <- ggplot(ozet_long, aes(x = Kaynak, y = Yuzde, fill = Islem_Turu)) +
   )
 
 print(p)
+
 #Gruplandırılmıs Sutun Grafigi
 library(tidyverse)
 library(scales)
 
-# CSV'yi oku
 df <- read_delim("belediye_atiklari.csv",
                  delim = ";",
                  locale = locale(decimal_mark = ",", encoding = "latin1"))
 
-# SC<tun adlarD1nD1 kD1salt
 df <- df %>%
   rename(
     bolge    = bolgeler,
@@ -184,7 +159,6 @@ df <- df %>%
     yakma_enerji = yakmaya_uygun_belediye_tiklari_enerji_esdegeri_tep_yil
   )
 
-# SayD1sal dC6nC<EC<m ve bC6lge bazD1nda toplam
 bolge_df <- df %>%
   mutate(
     biyometan    = as.numeric(biyometan),
@@ -200,7 +174,6 @@ bolge_df <- df %>%
                names_to  = "tur",
                values_to = "miktar")
 
-# BC6lge sD1ralamasD1 (toplama gC6re bC<yC<kten kC<C'C<De)
 bolge_sirali <- bolge_df %>%
   group_by(bolge) %>%
   summarise(toplam = sum(miktar)) %>%
@@ -209,7 +182,6 @@ bolge_sirali <- bolge_df %>%
 
 bolge_df$bolge <- factor(bolge_df$bolge, levels = bolge_sirali)
 
-# Grafik
 ggplot(bolge_df, aes(x = bolge, y = miktar / 1e6, fill = tur)) +
   geom_col(position = "dodge", width = 0.65) +
   scale_fill_manual(
@@ -238,12 +210,12 @@ ggplot(bolge_df, aes(x = bolge, y = miktar / 1e6, fill = tur)) +
     panel.grid.major.x = element_blank(),
     panel.grid.minor   = element_blank()
   )
+                   
 #Isı Haritasi
 library(ggplot2)
 library(dplyr)
 library(scales)
 
-# --- Veri okuma ---
 hayvansal <- read.csv2("hayvansal_atiklar.csv",
                        fileEncoding = "Windows-1254",
                        stringsAsFactors = FALSE)
@@ -252,25 +224,20 @@ belediye <- read.csv2("belediye_atiklari.csv",
                       fileEncoding = "Windows-1254",
                       stringsAsFactors = FALSE)
 
-# --- Enerji sC<tununu sayD1ya C'evir ---
 hayvansal$enerji <- as.numeric(
   gsub(",", ".", hayvansal$enerji_esdegeri_tep_yil)
 )
 
-# --- BoEluklarD1 temizle ---
 hayvansal$il <- trimws(hayvansal$il)
 belediye$il  <- trimws(belediye$il)
 
-# --- BC6lge eEleEtirmesi ---
 il_bolge <- belediye %>%
   select(il, bolgeler) %>%
   distinct()
 
-# --- Join ---
 hayvansal_bolge <- hayvansal %>%
   left_join(il_bolge, by = "il")
 
-# --- IsD1 haritasD1 verisi (DiDer ve NA C'D1karD1ldD1) ---
 isi_data <- hayvansal_bolge %>%
   filter(
     !is.na(bolgeler),
@@ -279,11 +246,9 @@ isi_data <- hayvansal_bolge %>%
   group_by(bolgeler, buyukbas_kucukbas_kanatli_diger) %>%
   summarise(toplam_enerji = sum(enerji, na.rm = TRUE), .groups = "drop")
 
-# --- Kontrol: "DiDer" kaldD1 mD1? ---
 print(unique(isi_data$buyukbas_kucukbas_kanatli_diger))
 print(nrow(isi_data))
 
-# --- IsD1 haritasD1 ---
 ggplot(isi_data,
        aes(x = buyukbas_kucukbas_kanatli_diger,
            y = bolgeler,
@@ -310,7 +275,8 @@ ggplot(isi_data,
     plot.title  = element_text(hjust = 0.5, face = "bold"),
     axis.text.x = element_text(angle = 20, hjust = 1)
   )
-  #Lolipop Grafigi
+                   
+#Lolipop Grafigi
 library(ggplot2)
 library(dplyr)
 library(stringr)
@@ -329,7 +295,6 @@ df <- ormansal %>%
     endustriyel_olmayan = endustriyel_olarak_degerlendirilmeyenler_ster_yil_
   ) %>%
   mutate(
-    # "ADANA BOLGE MUDURLUGU" -> "Adana"
     bolge_kisa = str_to_title(
       str_trim(gsub("B.LGE M.D.RL.G.", "", bolge, perl = TRUE))
     ),
@@ -352,7 +317,6 @@ renk_paleti <- c(
 )
 p <- ggplot(df, aes(x = bolge_kisa, y = endustriyel_olmayan)) +
   
-  # Çubuk (sap)
   geom_segment(
     aes(xend = bolge_kisa, y = 0, yend = endustriyel_olmayan,
         color = bolge_kisa),
@@ -360,7 +324,6 @@ p <- ggplot(df, aes(x = bolge_kisa, y = endustriyel_olmayan)) +
     lineend = "round"
   ) +
   
-  # Nokta dış halka (beyaz çerçeve)
   geom_point(
     size = 9,
     shape = 21,
@@ -369,7 +332,6 @@ p <- ggplot(df, aes(x = bolge_kisa, y = endustriyel_olmayan)) +
     stroke = 2
   ) +
   
-  # Nokta iç dolgu (sıra rengine göre)
   geom_point(
     aes(fill = bolge_kisa),
     size = 8,
@@ -378,7 +340,7 @@ p <- ggplot(df, aes(x = bolge_kisa, y = endustriyel_olmayan)) +
     stroke = 1
   ) +
   
-  # Nokta içi sıra numarası
+ 
   geom_text(
     aes(label = rank),
     color = "white",
@@ -386,7 +348,7 @@ p <- ggplot(df, aes(x = bolge_kisa, y = endustriyel_olmayan)) +
     fontface = "bold"
   ) +
   
-  # Değer etiketi
+ 
   geom_text(
     aes(label = paste0(fmt_tr(endustriyel_olmayan), " ster"),
         color = bolge_kisa),
@@ -395,11 +357,10 @@ p <- ggplot(df, aes(x = bolge_kisa, y = endustriyel_olmayan)) +
     fontface = "bold"
   ) +
   
-  # Renkleri manuel ata (çubuk + nokta + etiket aynı skala)
+  
   scale_color_manual(values = setNames(renk_paleti, levels(df$bolge_kisa)), guide = "none") +
   scale_fill_manual(values  = setNames(renk_paleti, levels(df$bolge_kisa)), guide = "none") +
   
-  # Y ekseni
   scale_y_continuous(
     labels = function(x) paste0(x / 1000, "K"),
     expand = expansion(mult = c(0, 0.28)),
@@ -443,12 +404,11 @@ library(scales)
 ormansal <- read.csv("ormansal_atiklar.csv", sep = ";", encoding = "latin1")
 colnames(ormansal) <- trimws(colnames(ormansal))
 
-# Sütun adlarını düzelt
+
 colnames(ormansal)[colnames(ormansal) == "bolge_mudurlugu._adi"] <- "bolge_mudurlugu_adi"
 colnames(ormansal)[colnames(ormansal) == "endustriyel_olarak_degerlendirilmeyenler_ster_yil_"] <- "endustriyel_ster_yil"
 colnames(ormansal)[colnames(ormansal) == "suceyrattan_elde_edilebilecekler_ster_yil"] <- "suceyrattan_ster_yil"
 
-# Artık temiz adlarla devam et
 ormansal <- ormansal %>%
   mutate(
     suceyrattan_ster = as.numeric(
@@ -465,25 +425,21 @@ top10 <- ormansal %>%
   arrange(suceyrattan_ster) %>%
   mutate(bolge = factor(bolge, levels = bolge))  # sırayı koru
 
-# ------------------------------------------------------------
-# 5. CLEVELAND DOT PLOT
-# ------------------------------------------------------------
 p <- ggplot(top10, aes(x = suceyrattan_ster, y = bolge)) +
   
-  # yatay referans çizgisi (0'dan noktaya)
   geom_segment(
     aes(x = 0, xend = suceyrattan_ster, yend = bolge),
     color     = "grey82",
     linewidth = 0.7
   ) +
   
-  # ana nokta
+  
   geom_point(
     color = "#378ADD",
     size  = 5
   ) +
   
-  # değer etiketi
+ 
   geom_text(
     aes(label = format(round(suceyrattan_ster), big.mark = ".", scientific = FALSE)),
     hjust  = -0.3,
@@ -491,7 +447,7 @@ p <- ggplot(top10, aes(x = suceyrattan_ster, y = bolge)) +
     color  = "grey45"
   ) +
   
-  # x eksenini genişlet ki etiketler kesilmesin
+ 
   scale_x_continuous(
     labels = label_number(big.mark = "."),
     expand = expansion(mult = c(0.02, 0.2))
@@ -523,7 +479,6 @@ print(p)
 library(ggplot2)
 library(dplyr)
 
-# --- Veri okuma ---
 hayvansal <- read.csv2("hayvansal_atiklar.csv",
                        fileEncoding = "Windows-1254",
                        stringsAsFactors = FALSE)
@@ -532,32 +487,29 @@ belediye <- read.csv2("belediye_atiklari.csv",
                       fileEncoding = "Windows-1254",
                       stringsAsFactors = FALSE)
 
-# --- Enerji sC<tununu sayD1ya C'evir ---
 hayvansal$enerji <- as.numeric(
   gsub(",", ".", hayvansal$enerji_esdegeri_tep_yil)
 )
 
-# --- BoEluklarD1 temizle ---
 hayvansal$il <- trimws(hayvansal$il)
 belediye$il  <- trimws(belediye$il)
 
-# --- BC6lge eEleEtirmesi ---
+
 il_bolge <- belediye %>%
   select(il, bolgeler) %>%
   distinct()
 
-# --- Join ---
+
 hayvansal_bolge <- hayvansal %>%
   left_join(il_bolge, by = "il")
 
-# --- Kutu grafiDi verisi ---
+
 isi_data_box <- hayvansal_bolge %>%
   filter(
     !is.na(bolgeler),
     !grepl("Di", buyukbas_kucukbas_kanatli_diger)
   )
 
-# --- BC6lgeyi faktC6re C'evir ---
 isi_data_box$bolge_factor <- as.factor(isi_data_box$bolgeler)
 bolge_sayisi <- nlevels(isi_data_box$bolge_factor)
 mavi_tonlar  <- colorRampPalette(c("#90CAF9", "#0D47A1"))(bolge_sayisi)
@@ -589,16 +541,16 @@ ggplot(isi_data_box2,
     axis.text.x      = element_text(angle = 25, hjust = 1),
     panel.grid.minor = element_blank()
   )
+                   
 #Gruplandirilmis Sutun Grafigi
 library(tidyverse)
 library(scales)
 
-# CSV'yi oku
+
 df <- read_delim("belediye_atiklari.csv",
                  delim = ";",
                  locale = locale(decimal_mark = ",", encoding = "latin1"))
 
-# SC<tun adlarD1nD1 kD1salt
 df <- df %>%
   rename(
     bolge    = bolgeler,
@@ -610,7 +562,6 @@ df <- df %>%
     yakma_enerji = yakmaya_uygun_belediye_tiklari_enerji_esdegeri_tep_yil
   )
 
-# SayD1sal dC6nC<EC<m ve bC6lge bazD1nda toplam
 bolge_df <- df %>%
   mutate(
     biyometan    = as.numeric(biyometan),
@@ -625,8 +576,6 @@ bolge_df <- df %>%
   pivot_longer(cols = c(Biyometanizasyon, Yakma),
                names_to  = "tur",
                values_to = "miktar")
-
-# BC6lge sD1ralamasD1 (toplama gC6re bC<yC<kten kC<C'C<De)
 bolge_sirali <- bolge_df %>%
   group_by(bolge) %>%
   summarise(toplam = sum(miktar)) %>%
@@ -635,7 +584,6 @@ bolge_sirali <- bolge_df %>%
 
 bolge_df$bolge <- factor(bolge_df$bolge, levels = bolge_sirali)
 
-# Grafik
 ggplot(bolge_df, aes(x = bolge, y = miktar / 1e6, fill = tur)) +
   geom_col(position = "dodge", width = 0.65) +
   scale_fill_manual(
@@ -664,3 +612,80 @@ ggplot(bolge_df, aes(x = bolge, y = miktar / 1e6, fill = tur)) +
     panel.grid.major.x = element_blank(),
     panel.grid.minor   = element_blank()
   )
+library(tidyverse)
+
+#Sütun Grafikleri
+df <- read.csv2("hayvansalduzenli.csv", 
+                stringsAsFactors = FALSE,
+                encoding = "latin1")  
+turkce_ascii <- function(x) {
+  x <- gsub("\u015f", "s", x)  # ş
+  x <- gsub("\u015e", "S", x)  # Ş
+  x <- gsub("\u0131", "i", x)  # ı
+  x <- gsub("\u0130", "I", x)  # İ
+  x <- gsub("\u011f", "g", x)  # ğ
+  x <- gsub("\u011e", "G", x)  # Ğ
+  x <- gsub("\u00fc", "u", x)  # ü
+  x <- gsub("\u00dc", "U", x)  # Ü
+  x <- gsub("\u00f6", "o", x)  # ö
+  x <- gsub("\u00d6", "O", x)  # Ö
+  x <- gsub("\u00e7", "c", x)  # ç
+  x <- gsub("\u00c7", "C", x)  # Ç
+  return(x)
+}
+
+
+df$il     <- turkce_ascii(df$il)
+df$hayvan <- turkce_ascii(df$hayvan)
+
+
+cat("Hayvanlar:", unique(df$hayvan), "\n")
+cat("Örnek iller:", head(unique(df$il), 10), "\n")
+
+
+top3_per_hayvan <- df %>%
+  group_by(hayvan, il) %>%
+  summarise(toplam_sayi = sum(hayvan_sayisi_adet, na.rm = TRUE), .groups = "drop") %>%
+  group_by(hayvan) %>%
+  slice_max(order_by = toplam_sayi, n = 3) %>%
+  arrange(hayvan, desc(toplam_sayi))
+
+hayvan_listesi <- unique(top3_per_hayvan$hayvan)
+
+for (h in hayvan_listesi) {
+  
+  veri <- top3_per_hayvan %>% filter(hayvan == h)
+  if (nrow(veri) == 0) { cat("Atlandi:", h, "\n"); next }
+  
+  p <- ggplot(veri,
+              aes(x = reorder(il, -toplam_sayi),
+                  y = toplam_sayi)) +
+    geom_bar(stat = "identity", width = 0.55, fill = "#2171B5") +
+    geom_text(aes(label = prettyNum(toplam_sayi, big.mark = " ")),
+              vjust    = -0.8,
+              size     = 5.5,
+              fontface = "bold",
+              color    = "black") +
+    scale_y_continuous(expand = expansion(mult = c(0, 0.2)),
+                       labels = function(x) prettyNum(x, big.mark = " ")) +
+    coord_cartesian(clip = "off") +
+    labs(
+      title = paste("En Cok", h, "Bulunan Ilk 3 Il"),
+      x     = "Il",
+      y     = "Sayi (Adet)"
+    ) +
+    theme_minimal(base_size = 14) +
+    theme(
+      legend.position    = "none",
+      axis.text.x        = element_text(size = 14, face = "bold", color = "black"),
+      axis.text.y        = element_text(size = 12, color = "black"),
+      axis.title         = element_text(size = 14, face = "bold"),
+      plot.title         = element_text(hjust = 0.5, size = 18, face = "bold"),
+      panel.grid.major.x = element_blank(),
+      plot.margin        = margin(40, 20, 20, 20)
+    )
+  
+  dosya_adi <- paste0("grafik_", h, ".pdf")
+  ggsave(dosya_adi, plot = p, width = 8, height = 6, device = pdf)
+  cat("Kaydedildi:", dosya_adi, "\n")
+}
