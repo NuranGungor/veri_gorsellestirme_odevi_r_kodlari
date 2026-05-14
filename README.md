@@ -5,7 +5,7 @@ Aksaray Üniveristesi Yönetim Bilişim Sistemleri Veri Görselleştirme Dersi P
 Veri görselleştirmesi dersi kapsamında yapmış olduğumuz posterimizdeki grafiklerin R kodları ve Excell veri setleri. 
 --------------------------------------------
 
-Proje Danışmanı:Prof.Dr.Volkan Soner Özsoy 
+Proje Danışmanı:Doç.Dr.Volkan Soner Özsoy 
 Posteri Hazırlayanlar:Nuran Güngör ve Sabri Tekin. 
 
 Linkedin hesaplarımız: https://www.linkedin.com/in/nurangüngör/ https://www.linkedin.com/in/sabritekin
